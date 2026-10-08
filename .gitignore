@@ -1,2 +1,11 @@
-*.png
-*.csv
+./*.png
+./*.csv
+./*.ini
+outputs/*
+
+## Python
+.env
+.venv
+env
+venv
+
