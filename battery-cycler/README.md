@@ -195,6 +195,11 @@ output is off in high-impedance mode, the instrument physically disconnects
 the remote-sense lines; the configured four-wire mode is used again when the
 output is enabled.
 
+Startup also stops continuous triggering, switches the output off, clears both
+default reading buffers with `TRAC:CLE "defbuffer1"` and
+`TRAC:CLE "defbuffer2"`, and verifies with `TRAC:ACT?` that both buffers contain
+zero readings before the test can start.
+
 The command choices follow the
 [Keithley 2461 Reference Manual](https://www.tek.com/en/keithley-source-measure-units/smu-2450-60-graphical-sourcemeter-manual-3).
 

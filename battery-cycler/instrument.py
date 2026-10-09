@@ -134,6 +134,15 @@ def setup(config: AppConfig) -> ScpiClient:
         client.send(":OUTP:SMOD HIMP")
         client.send(":OUTP OFF")
 
+        for buffer_name in ("defbuffer1", "defbuffer2"):
+            client.send(f':TRAC:CLE "{buffer_name}"')
+        for buffer_name in ("defbuffer1", "defbuffer2"):
+            query = f':TRAC:ACT? "{buffer_name}"'
+            if _parse_float_response(client.query(query), query) != 0.0:
+                raise InstrumentError(
+                    f"Instrument buffer {buffer_name!r} was not cleared"
+                )
+
         client.send(":SENS:VOLT:RSEN ON")
         client.send(":SENS:CURR:RSEN ON")
         for query in (":SENS:VOLT:RSEN?", ":SENS:CURR:RSEN?"):
