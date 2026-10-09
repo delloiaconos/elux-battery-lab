@@ -26,3 +26,8 @@ htmlcov/
 env
 venv
 
+# Output directories
+output/
+outputs/
+out/
+outs/
