@@ -1,0 +1,6 @@
+duration,mode,source,compliance,meas_lb,meas_up,epsilon,tcompliance
+5.0,MEAS,,,,,,
+30.0,CURR,0.1,4.2,2.5,4.25,0.01,10
+15.0,VOLT,4.0,0.2,-0.2,0.2,0.001,10
+5.0,MEAS,,,,,,
+,STOP,,,,,,
