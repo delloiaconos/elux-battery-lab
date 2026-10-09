@@ -1,10 +1,26 @@
-.*.png
-.*.csv
-.*.ini
+/*.png
+/*.csv
+/*.ini
 outputs/*
 output/*
 
-## Python
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Strumenti di sviluppo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# PythEonEnvironment
 .env
 .venv
 env
