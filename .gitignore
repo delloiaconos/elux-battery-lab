@@ -1,7 +1,8 @@
-./*.png
-./*.csv
-./*.ini
+.*.png
+.*.csv
+.*.ini
 outputs/*
+output/*
 
 ## Python
 .env
