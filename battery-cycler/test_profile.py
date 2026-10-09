@@ -85,14 +85,7 @@ def input_parsing(input_path: Path) -> list[TestStep]:
                     f"Row {row_number}: duration must be non-negative or exactly -1"
                 )
 
-            if mode == "MEAS":
-                if duration == -1.0:
-                    raise InputFileError(
-                        f"Row {row_number}: MEAS cannot use duration=-1 because "
-                        "MEAS has no compliance termination condition"
-                    )
-                steps.append(TestStep(duration=duration, mode=mode))
-                continue
+            #steps.append(TestStep(duration=duration, mode=mode))
 
             source = _required_float(row, "source", row_number)
             compliance = _required_float(row, "compliance", row_number)

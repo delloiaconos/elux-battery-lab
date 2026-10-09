@@ -59,9 +59,7 @@ def _run_step(
 
     started_at = time.monotonic()
     next_sample_at = started_at
-    tcompliance = (
-        require_step_value(step, "tcompliance") if step.duration < 0.0 else None
-    )
+    tcompliance = require_step_value(step, "tcompliance")
     compliance_started_at: float | None = None
 
     while True:
@@ -101,35 +99,24 @@ def _run_step(
                     f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
                     f"Step {phase_id}: measurement outside limits; advancing"
                 )
+                
+        tripped = measurement.state in {"VLIM", "ILIM"}
+        if tripped:
+            print("TRIPPED")
+            if compliance_started_at is None:
+                compliance_started_at = sampled_at
+                print("COMPLIANCE STARTED")
+            if (
+                tcompliance is not None
+                and sampled_at - compliance_started_at >= tcompliance
+            ):
+                print(
+                    f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                    f"Step {phase_id}: compliance time limit reached"
+                )
                 return
         else:
-            tripped = measurement.state in {"VLIM", "ILIM"}
-            if tripped:
-                if compliance_started_at is None:
-                    compliance_started_at = sampled_at
-                measured_limit_value = (
-                    measurement.voltage
-                    if step.mode == "CURR"
-                    else measurement.current
-                )
-                epsilon = require_step_value(step, "epsilon")
-                if abs(abs(measured_limit_value) - float(applied_compliance)) <= epsilon:
-                    print(
-                        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                        f"Step {phase_id}: compliance value reached within epsilon"
-                    )
-                    return
-                if (
-                    tcompliance is not None
-                    and sampled_at - compliance_started_at >= tcompliance
-                ):
-                    print(
-                        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                        f"Step {phase_id}: compliance time limit reached"
-                    )
-                    return
-            else:
-                compliance_started_at = None
+            compliance_started_at = None
 
         next_sample_at = max(
             next_sample_at + config.sampling_time, time.monotonic()
