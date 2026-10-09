@@ -30,6 +30,13 @@ def _outside_measurement_limits(step: TestStep, measurement: Measurement) -> boo
     return not lower <= controlled_measurement <= upper
 
 
+def _format_elapsed(seconds: float) -> str:
+    """Format elapsed seconds as HH:MM:SS.mmm for console progress."""
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{int(hours):02d}:{int(minutes):02d}:{seconds:06.3f}"
+
+
 def _run_step(
     client: ScpiClient,
     writer: csv.writer,
@@ -37,9 +44,11 @@ def _run_step(
     config: AppConfig,
     step: TestStep,
     phase_id: int,
+    run_started_at: float,
 ) -> None:
     applied_compliance = configure_step(client, config, step)
     print(
+        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
         f"Step {phase_id}: mode={step.mode}, duration={step.duration:g} s"
         + (
             ""
@@ -50,12 +59,18 @@ def _run_step(
 
     started_at = time.monotonic()
     next_sample_at = started_at
+    tcompliance = (
+        require_step_value(step, "tcompliance") if step.duration < 0.0 else None
+    )
     compliance_started_at: float | None = None
 
     while True:
         now = time.monotonic()
         if step.duration >= 0.0 and now - started_at >= step.duration:
-            print(f"Step {phase_id}: duration reached")
+            print(
+                f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                f"Step {phase_id}: duration reached"
+            )
             return
 
         if now < next_sample_at:
@@ -75,20 +90,23 @@ def _run_step(
         )
         output_file.flush()
         print(
-            f"[{timestamp}] phase={phase_id} state={measurement.state} "
+            f"[{_format_elapsed(sampled_at - run_started_at)}] "
+            f"phase={phase_id} state={measurement.state} "
             f"I={measurement.current:.9g} A V={measurement.voltage:.9g} V"
         )
 
         if step.duration >= 0.0:
             if _outside_measurement_limits(step, measurement):
-                print(f"Step {phase_id}: measurement outside limits; advancing")
+                print(
+                    f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                    f"Step {phase_id}: measurement outside limits; advancing"
+                )
                 return
         else:
             tripped = measurement.state in {"VLIM", "ILIM"}
             if tripped:
                 if compliance_started_at is None:
                     compliance_started_at = sampled_at
-
                 measured_limit_value = (
                     measurement.voltage
                     if step.mode == "CURR"
@@ -96,12 +114,19 @@ def _run_step(
                 )
                 epsilon = require_step_value(step, "epsilon")
                 if abs(abs(measured_limit_value) - float(applied_compliance)) <= epsilon:
-                    print(f"Step {phase_id}: compliance value reached within epsilon")
+                    print(
+                        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                        f"Step {phase_id}: compliance value reached within epsilon"
+                    )
                     return
-
-                tcompliance = require_step_value(step, "tcompliance")
-                if sampled_at - compliance_started_at >= tcompliance:
-                    print(f"Step {phase_id}: compliance time limit reached")
+                if (
+                    tcompliance is not None
+                    and sampled_at - compliance_started_at >= tcompliance
+                ):
+                    print(
+                        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                        f"Step {phase_id}: compliance time limit reached"
+                    )
                     return
             else:
                 compliance_started_at = None
@@ -116,6 +141,7 @@ def testing(
     config: AppConfig,
     steps: Sequence[TestStep],
     output_path: Path,
+    run_started_at: float,
 ) -> None:
     """Execute all profile steps and stream measurements to the output CSV."""
     try:
@@ -131,18 +157,24 @@ def testing(
         output_file.flush()
         for phase_id, step in enumerate(steps, start=1):
             if step.mode == "STOP":
-                print(f"Step {phase_id}: STOP requested")
+                print(
+                    f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                    f"Step {phase_id}: STOP requested"
+                )
                 break
-            _run_step(client, writer, output_file, config, step, phase_id)
+            _run_step(
+                client, writer, output_file, config, step, phase_id, run_started_at
+            )
 
 
 def run_test(config: AppConfig, steps: Sequence[TestStep], output_path: Path) -> None:
     """Run instrument setup, battery testing, and guaranteed shutdown."""
     client: ScpiClient | None = None
     active_error: BaseException | None = None
+    run_started_at = time.monotonic()
     try:
         client = setup(config)
-        testing(client, config, steps, output_path)
+        testing(client, config, steps, output_path, run_started_at)
     except BaseException as exc:
         active_error = exc
         raise

@@ -90,8 +90,8 @@ Column meanings:
   `CURR` or measured current in `VOLT`. Leaving the range advances to the next
   step.
 - `epsilon`: positive tolerance used by a `duration=-1` compliance step.
-- `tcompliance`: maximum uninterrupted time in compliance. The timer resets if
-  the instrument leaves compliance.
+- `tcompliance`: maximum uninterrupted time in compliance. The timer starts
+  when compliance is reached and resets if the instrument leaves compliance.
 
 For `MEAS`, the source, compliance, bounds, epsilon, and compliance-time fields
 are ignored; current and voltage are both acquired. For `STOP`, every field
