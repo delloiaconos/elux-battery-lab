@@ -89,16 +89,16 @@ Column meanings:
 - `meas_lb`, `meas_up`: inclusive software bounds for measured voltage in
   `CURR` or measured current in `VOLT`. Leaving the range advances to the next
   step.
-- `epsilon`: positive tolerance used by a `duration=-1` compliance step.
-- `tcompliance`: maximum uninterrupted time in compliance. The timer starts
-  when compliance is reached and resets if the instrument leaves compliance.
+- `epsilon`: positive cutoff threshold used while the instrument reports
+  compliance. In `VLIM`, the step ends if the absolute current falls below this
+  value; in `ILIM`, it ends if the absolute voltage falls below it.
+- `tcompliance`: maximum continuous time in a compliance state (`VLIM` or
+  `ILIM`). The timer starts when that state is first observed and resets if the
+  instrument leaves compliance. Reaching this limit ends the step.
 
 For `MEAS`, the source, compliance, bounds, epsilon, and compliance-time fields
 are ignored; current and voltage are both acquired. For `STOP`, every field
 except `mode` is ignored.
-
-For negative-source tests, compliance termination compares magnitudes:
-`abs(abs(measured_value) - applied_compliance) <= epsilon`.
 
 ## Usage
 
@@ -158,6 +158,9 @@ timestamp,idphase,state,current,voltage
 - `state`: `CURR`, `VOLT`, `VLIM`, `ILIM`, or `MEAS`
 - `current`: measured/source-readback current in amperes
 - `voltage`: measured/source-readback voltage in volts
+
+Console progress lines show elapsed time in `HH:MM:SS.mmm`, measured from the
+start of the run. CSV timestamps remain Unix timestamps.
 
 ## Shutdown behavior
 
