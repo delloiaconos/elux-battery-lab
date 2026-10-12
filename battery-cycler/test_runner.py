@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import sys
 import time
 from pathlib import Path
@@ -54,7 +55,8 @@ def _run_step(
             ""
             if applied_compliance is None
             else f", applied compliance={applied_compliance:.9g}"
-        )
+        ),
+        file=sys.stderr,
     )
 
     started_at = time.monotonic()
@@ -67,7 +69,8 @@ def _run_step(
         if step.duration >= 0.0 and now - started_at >= step.duration:
             print(
                 f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                f"Step {phase_id}: duration reached"
+                f"Step {phase_id}: duration reached",
+                file=sys.stderr,
             )
             return
 
@@ -88,16 +91,26 @@ def _run_step(
         )
         output_file.flush()
         print(
-            f"[{_format_elapsed(sampled_at - run_started_at)}] "
-            f"phase={phase_id} state={measurement.state} "
-            f"I={measurement.current:.9g} A V={measurement.voltage:.9g} V"
+            json.dumps(
+                {
+                    "time": round(sampled_at - run_started_at, 3),
+                    "timestamp": float(timestamp),
+                    "idphase": phase_id,
+                    "state": measurement.state,
+                    "current": measurement.current,
+                    "voltage": measurement.voltage,
+                },
+                separators=(",", ":"),
+                allow_nan=False,
+            )
         )
 
         if step.duration >= 0.0:
             if _outside_measurement_limits(step, measurement):
                 print(
                     f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                    f"Step {phase_id}: measurement outside limits; advancing"
+                    f"Step {phase_id}: measurement outside limits; advancing",
+                    file=sys.stderr,
                 )
                 return
             
@@ -112,7 +125,8 @@ def _run_step(
                 ):
                     print(
                         f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                        f"Step {phase_id}: compliance time limit reached"
+                        f"Step {phase_id}: compliance time limit reached",
+                        file=sys.stderr,
                     )
                     return
 
@@ -120,14 +134,16 @@ def _run_step(
                     if abs( measurement.current ) < step.compliance_lim:
                         print(
                             f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                            f"Step {phase_id}: current compliance_lim exceeded"
+                            f"Step {phase_id}: current compliance_lim exceeded",
+                            file=sys.stderr,
                         )
                         return
                 elif measurement.state == "ILIM":
                     if abs( measurement.voltage ) < step.compliance_lim:
                         print(
                             f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                            f"Step {phase_id}: voltage compliance_lim exceeded"
+                            f"Step {phase_id}: voltage compliance_lim exceeded",
+                            file=sys.stderr,
                         )
                         return
             else:
@@ -152,7 +168,7 @@ def testing(
     except OSError as exc:
         raise ConfigurationError(f"Unable to create output file {output_path}: {exc}") from exc
 
-    print(f"Writing measurements to {output_path}")
+    print(f"Writing measurements to {output_path}", file=sys.stderr)
     with output_file:
         writer = csv.writer(output_file)
         writer.writerow(OUTPUT_COLUMNS)
@@ -161,7 +177,8 @@ def testing(
             if step.mode == "STOP":
                 print(
                     f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                    f"Step {phase_id}: STOP requested"
+                    f"Step {phase_id}: STOP requested",
+                    file=sys.stderr,
                 )
                 break
             _run_step(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import math
 import statistics
+import sys
 from pathlib import Path
 
 from models import CSV_COLUMNS, InputFileError, TestStep
@@ -31,11 +32,12 @@ def _required_float(row: dict[str, str], field: str, row_number: int) -> float:
 
 def _print_source_summary(label: str, unit: str, values: list[float]) -> None:
     if not values:
-        print(f"  {label}: n/a")
+        print(f"  {label}: n/a", file=sys.stderr)
         return
     print(
         f"  {label}: min={min(values):.9g} {unit}, "
-        f"max={max(values):.9g} {unit}, mean={statistics.fmean(values):.9g} {unit}"
+        f"max={max(values):.9g} {unit}, mean={statistics.fmean(values):.9g} {unit}",
+        file=sys.stderr,
     )
 
 
@@ -123,9 +125,12 @@ def input_parsing(input_path: Path) -> list[TestStep]:
     current_sources = [step.source for step in steps if step.mode == "CURR"]
     voltage_sources = [step.source for step in steps if step.mode == "VOLT"]
 
-    print(f"Input profile: {input_path}")
-    print(f"  Steps: {len(steps)}")
-    print(f"  Finite total duration: {finite_duration / 60.0:.3f} min")
+    print(f"Input profile: {input_path}", file=sys.stderr)
+    print(f"  Steps: {len(steps)}", file=sys.stderr)
+    print(
+        f"  Finite total duration: {finite_duration / 60.0:.3f} min",
+        file=sys.stderr,
+    )
     _print_source_summary(
         "CURR source", "A", [value for value in current_sources if value is not None]
     )

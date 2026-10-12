@@ -113,7 +113,10 @@ def _parse_scpi_bool(response: str, command: str) -> bool:
 def setup(config: AppConfig) -> ScpiClient:
     """Connect, identify, reset, and configure safe four-wire operation."""
     client = ScpiClient(config.dev_address, config.dev_port)
-    print(f"Connecting to Keithley 2461 at {config.dev_address}:{config.dev_port}...")
+    print(
+        f"Connecting to Keithley 2461 at {config.dev_address}:{config.dev_port}...",
+        file=sys.stderr,
+    )
     connected = False
     try:
         client.connect()
@@ -125,7 +128,7 @@ def setup(config: AppConfig) -> ScpiClient:
                 "Unexpected instrument identity: "
                 f"{identification!r}; expected a Keithley 2461"
             )
-        print(f"Instrument: {identification}")
+        print(f"Instrument: {identification}", file=sys.stderr)
 
         client.send("*RST")
         if client.query("*OPC?") != "1":
@@ -184,7 +187,8 @@ def shutdown(client: ScpiClient | None) -> None:
     client.close()
     print(
         "Instrument triggering stopped, output set to high impedance and "
-        "switched off; TCP closed."
+        "switched off; TCP closed.",
+        file=sys.stderr,
     )
     if errors:
         raise InstrumentError("Shutdown was incomplete: " + "; ".join(errors))

@@ -126,7 +126,7 @@ def _check_device(config: AppConfig) -> None:
     active_error: BaseException | None = None
     try:
         client = setup(config)
-        print("Device check passed.")
+        print("Device check passed.", file=sys.stderr)
     except BaseException as exc:
         active_error = exc
         raise

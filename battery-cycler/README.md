@@ -159,8 +159,16 @@ timestamp,idphase,state,current,voltage
 - `current`: measured/source-readback current in amperes
 - `voltage`: measured/source-readback voltage in volts
 
-Console progress lines show elapsed time in `HH:MM:SS.mmm`, measured from the
-start of the run. CSV timestamps remain Unix timestamps.
+Standard output contains one JSON object per measurement (NDJSON), for example:
+
+```json
+{"time":1.234,"timestamp":1791800000.123,"idphase":1,"state":"CURR","current":0.1,"voltage":3.7}
+```
+
+The object includes elapsed seconds from the start of the run, a Unix timestamp,
+the one-based phase number, measurement state, current, and voltage. Status,
+progress, and error messages are written to standard error so standard output
+can be consumed as a stream of JSON records.
 
 ## Shutdown behavior
 
