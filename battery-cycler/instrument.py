@@ -220,7 +220,7 @@ def configure_step(
         client.send(':SENS:FUNC "VOLT"')
         client.send(":SENS:VOLT:RANG:AUTO ON")
         client.send(f":SOUR:CURR {source:.12g}")
-    else:
+    elif step.mode == "VOLT":
         applied_compliance = min(requested_compliance, config.current_compliance)
         client.send(":SOUR:FUNC VOLT")
         client.send(":SOUR:VOLT:RANG:AUTO ON")
@@ -229,7 +229,9 @@ def configure_step(
         client.send(':SENS:FUNC "CURR"')
         client.send(":SENS:CURR:RANG:AUTO ON")
         client.send(f":SOUR:VOLT {source:.12g}")
-
+    else:
+        raise InstrumentError(f"Unsupported step mode: {step.mode!r}")
+    
     client.send(":OUTP ON")
     return applied_compliance
 
