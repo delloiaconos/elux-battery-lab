@@ -193,9 +193,7 @@ def shutdown(client: ScpiClient | None) -> None:
 def configure_step(
     client: ScpiClient, config: AppConfig, step: TestStep
 ) -> float | None:
-    """Configure one executable test phase and enable the output."""
-    client.send(":OUTP:SMOD HIMP")
-    client.send(":OUTP OFF")
+    """Configure one executable test phase while keeping the output enabled."""
 
     if step.mode == "MEAS":
         client.send(":SOUR:FUNC CURR")

@@ -186,10 +186,10 @@ configured global voltage compliance, enables source readback, and measures
 voltage. The returned source readback and voltage are stored as current and
 voltage with state `MEAS`.
 
-The 2461 output is **on** during a `MEAS` phase so its output relay is closed and
-the measurement terminals remain connected. This is not the isolated
-high-impedance output-off state. High impedance and output off are restored
-during shutdown.
+The 2461 output stays **on** while phases are configured, including `MEAS`, so
+the output relay remains closed and the measurement terminals stay connected.
+The program does not switch the output off between phases. High impedance and
+output off are restored during shutdown.
 
 During setup, four-wire remote sensing is enabled and verified independently
 for voltage and current with `SENS:VOLT:RSEN ON` and `SENS:CURR:RSEN ON`.
