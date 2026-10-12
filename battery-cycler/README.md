@@ -130,6 +130,29 @@ Run a test with default file names (`config.ini` and `steps.csv`):
 python main.py
 ```
 
+To keep a test running in a detachable terminal session, start GNU Screen from
+the project directory and launch the program inside it:
+
+```bash
+screen -S battery-test
+python main.py
+```
+
+Detach while leaving the program running with `Ctrl+A`, then `D`. To find and
+recover the session later, for example after reconnecting over SSH, run:
+
+```bash
+screen -ls
+screen -r battery-test
+```
+
+If the session is still attached to another terminal, detach it there and
+attach here with:
+
+```bash
+screen -d -r battery-test
+```
+
 Override paths or names from the command line:
 
 ```bash
