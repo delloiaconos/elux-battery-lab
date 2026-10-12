@@ -247,8 +247,7 @@ def measure(client: ScpiClient, mode: str) -> Measurement:
             voltage=measured_value,
             state="MEAS",
         )
-
-    if mode == "CURR":
+    elif mode == "CURR":
         trip_command = ":SOUR:CURR:VLIM:TRIP?"
         tripped = _parse_scpi_bool(client.query(trip_command), trip_command)
         return Measurement(
@@ -256,11 +255,13 @@ def measure(client: ScpiClient, mode: str) -> Measurement:
             voltage=measured_value,
             state="VLIM" if tripped else "CURR",
         )
-
-    trip_command = ":SOUR:VOLT:ILIM:TRIP?"
-    tripped = _parse_scpi_bool(client.query(trip_command), trip_command)
-    return Measurement(
-        current=measured_value,
-        voltage=source_value,
-        state="ILIM" if tripped else "VOLT",
-    )
+    elif mode == "VOLT":
+        trip_command = ":SOUR:VOLT:ILIM:TRIP?"
+        tripped = _parse_scpi_bool(client.query(trip_command), trip_command)
+        return Measurement(
+            current=measured_value,
+            voltage=source_value,
+            state="ILIM" if tripped else "VOLT",
+        )
+    else:
+        raise InstrumentError(f"Unsupported step mode: {mode!r}")
