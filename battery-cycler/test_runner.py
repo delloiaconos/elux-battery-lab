@@ -104,6 +104,7 @@ def _run_step(
         if tripped:
             if compliance_started_at is None:
                 compliance_started_at = sampled_at
+            
             if (
                 tcompliance is not None
                 and sampled_at - compliance_started_at >= tcompliance
@@ -113,6 +114,22 @@ def _run_step(
                     f"Step {phase_id}: compliance time limit reached"
                 )
                 return
+
+            if measurement.state == "VLIM":
+                if abs( measurement.current ) < step.epsilon:
+                    print(
+                        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                        f"Step {phase_id}: current epsilon exceeded"
+                    )
+                    return
+            elif measurement.state == "ILIM":
+                if abs( measurement.voltage ) < step.epsilon:
+                    print(
+                        f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
+                        f"Step {phase_id}: voltage epsilon exceeded"
+                    )
+                    return
+            
         else:
             compliance_started_at = None
 
