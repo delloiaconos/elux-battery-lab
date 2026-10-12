@@ -102,10 +102,8 @@ def _run_step(
                 
         tripped = measurement.state in {"VLIM", "ILIM"}
         if tripped:
-            print("TRIPPED")
             if compliance_started_at is None:
                 compliance_started_at = sampled_at
-                print("COMPLIANCE STARTED")
             if (
                 tcompliance is not None
                 and sampled_at - compliance_started_at >= tcompliance
