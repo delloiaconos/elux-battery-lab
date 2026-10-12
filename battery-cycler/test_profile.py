@@ -91,17 +91,17 @@ def input_parsing(input_path: Path) -> list[TestStep]:
             compliance = _required_float(row, "compliance", row_number)
             meas_lb = _required_float(row, "meas_lb", row_number)
             meas_up = _required_float(row, "meas_up", row_number)
-            epsilon = _required_float(row, "epsilon", row_number)
-            tcompliance = _required_float(row, "tcompliance", row_number)
+            compliance_lim = _required_float(row, "compliance_lim", row_number)
+            compliance_t = _required_float(row, "compliance_t", row_number)
 
             if compliance <= 0.0:
                 raise InputFileError(f"Row {row_number}: compliance must be > 0")
             if meas_lb > meas_up:
                 raise InputFileError(f"Row {row_number}: meas_lb must be <= meas_up")
-            if epsilon <= 0.0:
-                raise InputFileError(f"Row {row_number}: epsilon must be > 0")
-            if tcompliance < 0.0:
-                raise InputFileError(f"Row {row_number}: tcompliance must be >= 0")
+            if compliance_lim <= 0.0:
+                raise InputFileError(f"Row {row_number}: compliance_lim must be > 0")
+            if compliance_t < 0.0:
+                raise InputFileError(f"Row {row_number}: compliance_t must be >= 0")
 
             steps.append(
                 TestStep(
@@ -111,8 +111,8 @@ def input_parsing(input_path: Path) -> list[TestStep]:
                     compliance=compliance,
                     meas_lb=meas_lb,
                     meas_up=meas_up,
-                    epsilon=epsilon,
-                    tcompliance=tcompliance,
+                    compliance_lim=compliance_lim,
+                    compliance_t=compliance_t,
                 )
             )
 

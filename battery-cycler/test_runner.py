@@ -59,7 +59,7 @@ def _run_step(
 
     started_at = time.monotonic()
     next_sample_at = started_at
-    tcompliance = require_step_value(step, "tcompliance")
+    compliance_t = require_step_value(step, "compliance_t")
     compliance_started_at: float | None = None
 
     while True:
@@ -107,8 +107,8 @@ def _run_step(
                     compliance_started_at = sampled_at
                 
                 if (
-                    tcompliance is not None
-                    and sampled_at - compliance_started_at >= tcompliance
+                    compliance_t is not None
+                    and sampled_at - compliance_started_at >= compliance_t
                 ):
                     print(
                         f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
@@ -117,17 +117,17 @@ def _run_step(
                     return
 
                 if measurement.state == "VLIM":
-                    if abs( measurement.current ) < step.epsilon:
+                    if abs( measurement.current ) < step.compliance_lim:
                         print(
                             f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                            f"Step {phase_id}: current epsilon exceeded"
+                            f"Step {phase_id}: current compliance_lim exceeded"
                         )
                         return
                 elif measurement.state == "ILIM":
-                    if abs( measurement.voltage ) < step.epsilon:
+                    if abs( measurement.voltage ) < step.compliance_lim:
                         print(
                             f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                            f"Step {phase_id}: voltage epsilon exceeded"
+                            f"Step {phase_id}: voltage compliance_lim exceeded"
                         )
                         return
             else:

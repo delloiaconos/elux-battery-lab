@@ -54,7 +54,7 @@ and required test procedure before connecting the output.
 The input must be a UTF-8 CSV with exactly this header:
 
 ```csv
-duration,mode,source,compliance,meas_lb,meas_up,epsilon,tcompliance
+duration,mode,source,compliance,meas_lb,meas_up,compliance_lim,compliance_t
 60.0,CURR,1.0,5.0,1.1,4.5,1.0e-4,3600
 60.0,VOLT,4.2,1.0,0.0,1.2,1.0e-4,3600
 60.0,MEAS,,,,,,
@@ -72,16 +72,16 @@ Column meanings:
 - `meas_lb`, `meas_up`: inclusive software bounds for measured voltage in
   `CURR` or measured current in `VOLT`. Leaving the range advances to the next
   step.
-- `epsilon`: positive tolerance used by a `duration=-1` compliance step.
-- `tcompliance`: maximum uninterrupted time in compliance. The timer resets if
+- `compliance_lim`: positive tolerance used by a `duration=-1` compliance step.
+- `compliance_t`: maximum uninterrupted time in compliance. The timer resets if
   the instrument leaves compliance.
 
-For `MEAS`, the source, compliance, bounds, epsilon, and compliance-time fields
+For `MEAS`, the source, compliance, bounds, compliance_lim, and compliance-time fields
 are ignored; current and voltage are both acquired. For `STOP`, every field
 except `mode` is ignored.
 
 For negative-source tests, compliance termination compares magnitudes:
-`abs(abs(measured_value) - applied_compliance) <= epsilon`.
+`abs(abs(measured_value) - applied_compliance) <= compliance_lim`.
 
 ## Usage
 
