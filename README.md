@@ -70,8 +70,8 @@ Column meanings:
 - `source`: current in amperes for `CURR`; voltage in volts for `VOLT`.
 - `compliance`: voltage limit for `CURR`; current limit for `VOLT`.
 - `meas_lb`, `meas_up`: inclusive software bounds for measured voltage in
-  `CURR` or measured current in `VOLT`. Leaving the range advances to the next
-  step.
+  `CURR` or measured current in `VOLT`. Leaving the range enters a software
+  limit state (`VSWL` or `CSWL`) in the same step, as described below.
 - `compliance_lim`: positive tolerance used by a `duration=-1` compliance step.
 - `compliance_t`: maximum uninterrupted time in compliance. The timer resets if
   the instrument leaves compliance.
@@ -82,6 +82,28 @@ except `mode` is ignored.
 
 For negative-source tests, compliance termination compares magnitudes:
 `abs(abs(measured_value) - applied_compliance) <= compliance_lim`.
+
+## Software limits
+
+In `VOLT`, current strictly above `meas_up` or below `meas_lb` switches the
+instrument to current sourcing at the crossed bound and enters `CSWL`.
+In `CURR`, the dual behavior switches to voltage sourcing at the crossed
+voltage bound and enters `VSWL`. Equality with a bound does not switch modes.
+The new hardware compliance is the magnitude of the original `source`, capped
+by the corresponding global compliance setting.
+
+The software-limit state lasts until `abs(voltage) < compliance_lim` in `CSWL`,
+or `abs(current) < compliance_lim` in `VSWL`, or until `compliance_t` seconds
+have elapsed since the switch. The original `duration` no longer ends a step
+once it has entered a software-limit state. These transitions also apply to
+steps with `duration = -1`. There is no automatic switch back within a step.
+CSV and JSON samples acquired after the switch report `CSWL` or `VSWL`.
+
+Before a software-limit transition, hardware tripping retains its existing
+cutoffs and continuous-compliance timer, including its reset when tripping
+clears. Hardware trip termination takes priority if both conditions occur in
+the same sample. As before, that hardware-trip termination logic applies to
+steps with nonnegative duration.
 
 ## Usage
 
@@ -141,7 +163,7 @@ timestamp,idphase,state,current,voltage
 
 - `timestamp`: Unix timestamp with millisecond precision
 - `idphase`: one-based CSV step number
-- `state`: `CURR`, `VOLT`, `VLIM`, `ILIM`, or `MEAS`
+- `state`: `CURR`, `VOLT`, `VLIM`, `ILIM`, `CSWL`, `VSWL`, or `MEAS`
 - `current`: measured/source-readback current in amperes
 - `voltage`: measured/source-readback voltage in volts
 

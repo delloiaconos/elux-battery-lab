@@ -6,6 +6,7 @@ import csv
 import json
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Sequence
 
@@ -13,22 +14,10 @@ from battery_cycler.instruments.keithley2461 import ScpiClient, configure_step, 
 from battery_cycler.core.models import (
     AppConfig,
     ConfigurationError,
-    Measurement,
     OUTPUT_COLUMNS,
     TestStep,
     require_step_value,
 )
-
-
-def _outside_measurement_limits(step: TestStep, measurement: Measurement) -> bool:
-    if step.mode == "MEAS":
-        return False
-    lower = require_step_value(step, "meas_lb")
-    upper = require_step_value(step, "meas_up")
-    controlled_measurement = (
-        measurement.voltage if step.mode == "CURR" else measurement.current
-    )
-    return not lower <= controlled_measurement <= upper
 
 
 def _format_elapsed(seconds: float) -> str:
@@ -63,10 +52,12 @@ def _run_step(
     next_sample_at = started_at
     compliance_t = require_step_value(step, "compliance_t")
     compliance_started_at: float | None = None
+    mode = step.mode
+    limit_started_at: float | None = None
 
     while True:
         now = time.monotonic()
-        if step.duration >= 0.0 and now - started_at >= step.duration:
+        if mode not in {"CSWL", "VSWL"} and step.duration >= 0.0 and now - started_at >= step.duration:
             print(
                 f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
                 f"Step {phase_id}: duration reached",
@@ -77,7 +68,7 @@ def _run_step(
         if now < next_sample_at:
             time.sleep(next_sample_at - now)
 
-        measurement = measure(client, step.mode)
+        measurement = measure(client, mode)
         sampled_at = time.monotonic()
         timestamp = f"{time.time():.3f}"
         writer.writerow(
@@ -105,15 +96,7 @@ def _run_step(
             )
         )
 
-        if step.duration >= 0.0:
-            if _outside_measurement_limits(step, measurement):
-                print(
-                    f"[{_format_elapsed(time.monotonic() - run_started_at)}] "
-                    f"Step {phase_id}: measurement outside limits; advancing",
-                    file=sys.stderr,
-                )
-                return
-            
+        if mode in {"CURR", "VOLT"} and step.duration >= 0.0:
             tripped = measurement.state in {"VLIM", "ILIM"}
             if tripped:
                 if compliance_started_at is None:
@@ -148,6 +131,42 @@ def _run_step(
                         return
             else:
                 compliance_started_at = None
+
+        if mode in {"CSWL", "VSWL"}:
+            controlled = measurement.voltage if mode == "CSWL" else measurement.current
+            if abs(controlled) < require_step_value(step, "compliance_lim"):
+                print(f"Step {phase_id}: {mode} cutoff reached", file=sys.stderr)
+                return
+            if limit_started_at is not None and sampled_at - limit_started_at >= compliance_t:
+                print(f"Step {phase_id}: {mode} time limit reached", file=sys.stderr)
+                return
+        elif mode in {"VOLT", "CURR"}:
+            # A read can finish after the phase deadline; duration takes priority.
+            if step.duration >= 0.0 and sampled_at - started_at >= step.duration:
+                print(f"Step {phase_id}: duration reached", file=sys.stderr)
+                return
+            controlled = measurement.current if mode == "VOLT" else measurement.voltage
+            lower = require_step_value(step, "meas_lb")
+            upper = require_step_value(step, "meas_up")
+            limit = None
+            if controlled > upper:
+                limit = upper
+            elif controlled < lower:
+                limit = lower
+            if limit is not None:
+                limit_step = replace(
+                    step,
+                    mode="CURR" if mode == "VOLT" else "VOLT",
+                    source=limit,
+                    compliance=abs(require_step_value(step, "source")),
+                )
+                configure_step(client, config, limit_step)
+                mode = "CSWL" if mode == "VOLT" else "VSWL"
+                limit_started_at = time.monotonic()
+                print(
+                    f"Step {phase_id}: {mode}, source={limit:.9g}",
+                    file=sys.stderr,
+                )
 
         next_sample_at = max(
             next_sample_at + config.sampling_time, time.monotonic()

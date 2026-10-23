@@ -245,7 +245,15 @@ def measure(client: ScpiClient, mode: str) -> Measurement:
         client.query(read_command), read_command
     )
 
-    if mode == "MEAS":
+    if mode == "CSWL":
+        return Measurement(
+            current=source_value, voltage=measured_value, state="CSWL"
+        )
+    elif mode == "VSWL":
+        return Measurement(
+            current=measured_value, voltage=source_value, state="VSWL"
+        )
+    elif mode == "MEAS":
         return Measurement(
             current=source_value,
             voltage=measured_value,
