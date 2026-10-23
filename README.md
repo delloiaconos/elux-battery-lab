@@ -85,11 +85,14 @@ For negative-source tests, compliance termination compares magnitudes:
 
 ## Usage
 
+The application lives in `battery-cycler/`; see its [project structure](battery-cycler/README.md#project-structure).
+Run the following commands from that directory (`cd battery-cycler`).
+
 Start by copying the examples to the default names:
 
 ```bash
-cp config.example.ini config.ini
-cp steps.example.csv steps.csv
+cp examples/config.example.ini config.ini
+cp examples/steps.example.csv steps.csv
 ```
 
 Edit `config.ini`, especially the device address and both global compliance
@@ -119,13 +122,13 @@ Override paths or names from the command line:
 python main.py \
   --config lab.ini \
   --in-dir ./profiles \
-  --in-file cycle.csv \
+  --input cycle.csv \
   --out-dir ./results \
-  --out-name cycle_01.csv
+  --output cycle_01.csv
 ```
 
 Command-line input and output directories take precedence over `config.ini`.
-If `--out-name` is omitted, the output name is
+If `--output` is omitted, the output name is
 `YYYYMMDDTHHMM_output.csv` in local system time.
 
 ## Output

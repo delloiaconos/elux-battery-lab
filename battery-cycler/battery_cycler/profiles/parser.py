@@ -8,7 +8,7 @@ import statistics
 import sys
 from pathlib import Path
 
-from models import CSV_COLUMNS, InputFileError, TestStep
+from battery_cycler.core.models import CSV_COLUMNS, InputFileError, TestStep
 
 
 def _finite_float(value: str, field: str, row_number: int) -> float:

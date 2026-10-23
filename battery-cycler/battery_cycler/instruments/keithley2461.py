@@ -6,7 +6,7 @@ import math
 import socket
 import sys
 
-from models import (
+from battery_cycler.core.models import (
     AppConfig,
     InstrumentError,
     Measurement,

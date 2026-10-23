@@ -9,8 +9,8 @@ import time
 from pathlib import Path
 from typing import Sequence
 
-from instrument import ScpiClient, configure_step, measure, setup, shutdown
-from models import (
+from battery_cycler.instruments.keithley2461 import ScpiClient, configure_step, measure, setup, shutdown
+from battery_cycler.core.models import (
     AppConfig,
     ConfigurationError,
     Measurement,

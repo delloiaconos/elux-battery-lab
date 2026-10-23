@@ -23,23 +23,39 @@ for completeness.
 > procedures before enabling the output. Validate the standard SCPI sequences
 > on the exact instrument and firmware used in the lab.
 
-## Files
+## Project structure
 
-- `main.py` — CLI, INI configuration, process signals, and top-level orchestration
-- `models.py` — shared constants, exceptions, and immutable data models
-- `test_profile.py` — test-profile CSV parsing, validation, and summary
-- `instrument.py` — TCP/SCPI transport and Keithley setup, measurement, and shutdown
-- `test_runner.py` — battery-test phase execution and measurement CSV writing
-- `config.example.ini` — commented example configuration
-- `steps.example.csv` — example profile covering every operating mode
-- `plot_measurements.m` — MATLAB loader and current/voltage plotter
-- `requirements.txt` — dependency declaration (standard library only)
-- `README.md` — project documentation
+```text
+battery-cycler/
+├── main.py                     # CLI entry point used by battery-cycler.sh
+├── battery_cycler/
+│   ├── __init__.py
+│   ├── __main__.py             # python -m battery_cycler
+│   ├── cli.py                  # Arguments, signals, and orchestration
+│   ├── config.py               # INI configuration loading and validation
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── models.py           # Models, constants, and exceptions
+│   │   └── runner.py           # Phase execution and measurement CSV output
+│   ├── instruments/
+│   │   ├── __init__.py
+│   │   └── keithley2461.py     # TCP/SCPI transport and instrument operations
+│   └── profiles/
+│       ├── __init__.py
+│       └── parser.py          # Profile CSV parsing and validation
+├── examples/
+│   ├── config.example.ini
+│   └── steps.example.csv
+├── output/                     # Locally generated measurement files
+├── requirements.txt
+└── README.md
+```
 
-The Python implementation is limited to five files. General application logic
-stays in `main.py`, `models.py`, and `test_profile.py`; instrument operations are
-isolated in `instrument.py`; the battery-testing state and timing logic live in
-`test_runner.py`.
+Run the commands below from `battery-cycler/`. Both `python main.py` and
+`python -m battery_cycler` launch the same CLI, without installing the package.
+Relative configuration, input, and output paths resolve from the working
+directory. The repository-level `battery-cycler.sh` continues to use `main.py`.
+Plotting utilities live in the repository's separate `plots/` directory.
 
 ## Configuration
 
@@ -105,8 +121,8 @@ except `mode` is ignored.
 Start by copying the examples to the default names:
 
 ```bash
-cp config.example.ini config.ini
-cp steps.example.csv steps.csv
+cp examples/config.example.ini config.ini
+cp examples/steps.example.csv steps.csv
 ```
 
 Edit `config.ini`, especially the device address and both global compliance
@@ -159,13 +175,13 @@ Override paths or names from the command line:
 python main.py \
   --config lab.ini \
   --in-dir ./profiles \
-  --in-file cycle.csv \
+  --input cycle.csv \
   --out-dir ./results \
-  --out-name cycle_01.csv
+  --output cycle_01.csv
 ```
 
 Command-line input and output directories take precedence over `config.ini`.
-If `--out-name` is omitted, the output name is
+If `--output` is omitted, the output name is
 `YYYYMMDDTHHMM_output.csv` in local system time.
 
 ## Output
@@ -239,7 +255,7 @@ The command choices follow the
 
 ## MATLAB visualization
 
-Open `plot_measurements.m` and set `fnInput` to the test-profile CSV and
+Open `../plots/plot.m` and set `fnInput` to the test-profile CSV and
 `fnMeasures` to the measurement CSV. Running the script creates two workspace
 tables named `tblTest` and `tblMeasures`, then plots current and voltage in
 synchronized subplots. Time is expressed in seconds from the first measurement,
