@@ -27,11 +27,10 @@ for completeness.
 
 ```text
 battery-cycler/
-├── main.py                     # CLI entry point used by battery-cycler.sh
+├── main.py                     # Arguments, signals, and orchestration
 ├── battery_cycler/
 │   ├── __init__.py
 │   ├── __main__.py             # python -m battery_cycler
-│   ├── cli.py                  # Arguments, signals, and orchestration
 │   ├── config.py               # INI configuration loading and validation
 │   ├── core/
 │   │   ├── __init__.py

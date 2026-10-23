@@ -1,6 +1,6 @@
 """Run the CLI with python -m battery_cycler."""
 
-from battery_cycler.cli import main
+from main import main
 
 
 if __name__ == "__main__":
