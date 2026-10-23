@@ -158,7 +158,11 @@ def _run_step(
                     step,
                     mode="CURR" if mode == "VOLT" else "VOLT",
                     source=limit,
-                    compliance=abs(require_step_value(step, "source")),
+                    compliance=(
+                        step.sw_compliance if step.sw_compliance is not None
+                        else (config.voltage_compliance if mode == "VOLT"
+                              else config.current_compliance)
+                    ),
                 )
                 configure_step(client, config, limit_step)
                 mode = "CSWL" if mode == "VOLT" else "VSWL"

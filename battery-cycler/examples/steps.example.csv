@@ -1,6 +1,6 @@
-duration,mode,source,compliance,meas_lb,meas_up,compliance_lim,compliance_t
-5.0,MEAS,,,,,,
-30.0,CURR,0.1,4.2,2.5,4.25,0.01,10
-15.0,VOLT,4.0,0.2,-0.2,0.2,0.001,10
-5.0,MEAS,,,,,,
-,STOP,,,,,,
+duration,mode,source,compliance,meas_lb,meas_up,compliance_lim,compliance_t,sw_compliance
+5.0,MEAS,,,,,,,
+30.0,CURR,0.1,4.2,2.5,4.25,0.01,10,0.2
+15.0,VOLT,4.0,0.2,-0.2,0.2,0.001,10,4.2
+5.0,MEAS,,,,,,,
+,STOP,,,,,,,

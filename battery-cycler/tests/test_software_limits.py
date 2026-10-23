@@ -15,11 +15,11 @@ class SoftwareLimitTests(unittest.TestCase):
     def setUp(self):
         self.config = AppConfig('unused', 5025, Path('.'), Path('.'), 1, 7, 5)
 
-    def run_step(self, readings, duration=1, timeout=3, mode="VOLT"):
+    def run_step(self, readings, duration=1, timeout=3, mode="VOLT", source=4.2, sw_compliance=None):
         clock = [0.0]
         def sleep(seconds):
             clock[0] += seconds
-        step = TestStep(duration, mode, 4.2, 2, -1, 1, 0.1, timeout)
+        step = TestStep(duration, mode, source, 2, -1, 1, 0.1, timeout, sw_compliance)
         output = io.StringIO()
         with patch.object(runner.time, 'monotonic', side_effect=lambda: clock[0]), \
              patch.object(runner.time, 'sleep', side_effect=sleep), \
@@ -35,7 +35,7 @@ class SoftwareLimitTests(unittest.TestCase):
                 configure, read, rows, _ = self.run_step([
                     Measurement(current, 4.2, 'VOLT'), Measurement(expected, 0.05, 'CSWL')])
                 switched = configure.call_args_list[1].args[2]
-                self.assertEqual((switched.mode, switched.source, switched.compliance), ('CURR', expected, 4.2))
+                self.assertEqual((switched.mode, switched.source, switched.compliance), ('CURR', expected, 7))
                 self.assertEqual([call.args[1] for call in read.call_args_list], ['VOLT', 'CSWL'])
                 self.assertEqual(rows[-1][2], 'CSWL')
 
@@ -62,7 +62,7 @@ class SoftwareLimitTests(unittest.TestCase):
                     Measurement(4.2, voltage, 'CURR'),
                     Measurement(-0.05, expected, 'VSWL')], mode='CURR')
                 switched = configure.call_args_list[1].args[2]
-                self.assertEqual((switched.mode, switched.source, switched.compliance), ('VOLT', expected, 4.2))
+                self.assertEqual((switched.mode, switched.source, switched.compliance), ('VOLT', expected, 5))
                 self.assertEqual(read.call_args_list[-1].args[1], 'VSWL')
                 self.assertEqual(rows[-1][2], 'VSWL')
 
@@ -100,11 +100,72 @@ class SoftwareLimitTests(unittest.TestCase):
 
     def test_current_configuration_preserves_voltage_ceiling(self):
         client = Mock()
+        client.query.return_value = 'VOLT'
         configure_step(client, self.config, TestStep(1, 'CURR', -1, 9))
         commands = [call.args[0] for call in client.send.call_args_list]
         self.assertIn(':SOUR:FUNC CURR', commands)
         self.assertIn(':SOUR:CURR -1', commands)
         self.assertIn(':SOUR:CURR:VLIM 7', commands)
+
+    def test_source_changes_disable_output_before_switching(self):
+        for previous, mode, target in (
+            ('VOLT', 'CURR', 'CURR'),
+            ('CURR', 'VOLT', 'VOLT'),
+            ('VOLT', 'MEAS', 'CURR'),
+        ):
+            with self.subTest(mode=mode):
+                client = Mock()
+                client.query.return_value = previous
+                configure_step(client, self.config, TestStep(1, mode, 1, 2))
+                commands = [call.args[0] for call in client.send.call_args_list]
+                self.assertEqual(commands[:4], [':OUTP:SMOD HIMP', ':OUTP OFF',
+                                               f':SOUR:FUNC {target}', ':OUTP:SMOD HIMP'])
+                self.assertEqual(commands[-1], ':OUTP ON')
+                self.assertEqual(commands.count(':OUTP ON'), 1)
+
+    def test_same_function_keeps_output_enabled(self):
+        for mode, response in (('CURR', 'CURR'), ('VOLT', 'VOLT'), ('MEAS', 'CURR')):
+            with self.subTest(mode=mode):
+                client = Mock()
+                client.query.return_value = response
+                configure_step(client, self.config, TestStep(1, mode, 1, 2))
+                commands = [call.args[0] for call in client.send.call_args_list]
+                self.assertNotIn(':OUTP OFF', commands)
+                self.assertFalse(any(cmd.startswith(':SOUR:FUNC ') for cmd in commands))
+
+    def test_failed_configuration_does_not_reenable_output(self):
+        client = Mock()
+        client.query.return_value = 'VOLT'
+        def send(command):
+            if command == ':SOUR:CURR:VLIM 2':
+                raise OSError('connection lost')
+        client.send.side_effect = send
+        with self.assertRaises(OSError):
+            configure_step(client, self.config, TestStep(1, 'CURR', 1, 2))
+        self.assertNotIn(':OUTP ON', [call.args[0] for call in client.send.call_args_list])
+
+    def test_software_limit_compliance_is_independent_of_source(self):
+        for mode, readings in (
+            ('VOLT', [Measurement(2, -9, 'VOLT'), Measurement(1, 0, 'CSWL')]),
+            ('CURR', [Measurement(-9, 2, 'CURR'), Measurement(0, 1, 'VSWL')]),
+        ):
+            with self.subTest(mode=mode):
+                configure, _, _, _ = self.run_step(readings, mode=mode, source=-9, sw_compliance=4.3)
+                transition = configure.call_args_list[1]
+                self.assertEqual(transition.args[2].compliance, 4.3)
+                self.assertEqual(transition.kwargs, {})
+
+    def test_compliance_is_capped_by_global_limits(self):
+        for mode, previous, command in (
+            ('CURR', 'VOLT', ':SOUR:CURR:VLIM 7'),
+            ('VOLT', 'CURR', ':SOUR:VOLT:ILIM 5'),
+        ):
+            with self.subTest(mode=mode):
+                client = Mock()
+                client.query.return_value = previous
+                applied = configure_step(client, self.config, TestStep(1, mode, 1, 9))
+                self.assertEqual(applied, 7 if mode == 'CURR' else 5)
+                self.assertIn(command, [call.args[0] for call in client.send.call_args_list])
 
 
 if __name__ == '__main__':

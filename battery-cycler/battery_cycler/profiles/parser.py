@@ -55,7 +55,7 @@ def input_parsing(input_path: Path) -> list[TestStep]:
             raise InputFileError("The input CSV is empty or has no header")
 
         normalized_header = tuple(name.strip() for name in reader.fieldnames)
-        if normalized_header != CSV_COLUMNS:
+        if normalized_header not in (CSV_COLUMNS, CSV_COLUMNS[:-1]):
             expected = ",".join(CSV_COLUMNS)
             actual = ",".join(normalized_header)
             raise InputFileError(
@@ -87,7 +87,15 @@ def input_parsing(input_path: Path) -> list[TestStep]:
                     f"Row {row_number}: duration must be non-negative or exactly -1"
                 )
 
-            #steps.append(TestStep(duration=duration, mode=mode))
+            if mode == "MEAS":
+                steps.append(TestStep(duration=duration, mode=mode, compliance_t=0.0))
+                continue
+
+            sw_compliance = None
+            if row.get("sw_compliance"):
+                sw_compliance = _required_float(row, "sw_compliance", row_number)
+                if sw_compliance <= 0.0:
+                    raise InputFileError(f"Row {row_number}: sw_compliance must be > 0")
 
             source = _required_float(row, "source", row_number)
             compliance = _required_float(row, "compliance", row_number)
@@ -115,6 +123,7 @@ def input_parsing(input_path: Path) -> list[TestStep]:
                     meas_up=meas_up,
                     compliance_lim=compliance_lim,
                     compliance_t=compliance_t,
+                    sw_compliance=sw_compliance,
                 )
             )
 

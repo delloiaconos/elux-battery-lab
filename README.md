@@ -51,7 +51,8 @@ and required test procedure before connecting the output.
 
 ## Test profile
 
-The input must be a UTF-8 CSV with exactly this header:
+The input is a UTF-8 CSV. The recommended header includes `sw_compliance`;
+the legacy eight-column header shown below is also accepted:
 
 ```csv
 duration,mode,source,compliance,meas_lb,meas_up,compliance_lim,compliance_t
@@ -85,12 +86,31 @@ For negative-source tests, compliance termination compares magnitudes:
 
 ## Software limits
 
+The extended CSV header is:
+
+```csv
+duration,mode,source,compliance,meas_lb,meas_up,compliance_lim,compliance_t,sw_compliance
+```
+
+`compliance` sets the hardware limit in the initial source mode;
+`sw_compliance` sets it after the software-limit transition. Both must be
+positive when supplied. `compliance_lim` is only a termination threshold,
+not a hardware limit. `MEAS` and `STOP` ignore `sw_compliance`.
+
 In `VOLT`, current strictly above `meas_up` or below `meas_lb` switches the
 instrument to current sourcing at the crossed bound and enters `CSWL`.
 In `CURR`, the dual behavior switches to voltage sourcing at the crossed
 voltage bound and enters `VSWL`. Equality with a bound does not switch modes.
-The new hardware compliance is the magnitude of the original `source`, capped
-by the corresponding global compliance setting.
+The new hardware compliance comes from `sw_compliance`: volts in `CSWL`,
+amperes in `VSWL`. It is independent of the original `source` and of the
+termination threshold `compliance_lim`. The corresponding global compliance
+ceiling still caps the applied value. When `sw_compliance` is empty or the
+legacy eight-column header is used, the corresponding global compliance is
+used (not `abs(source)`). This changes the fallback behavior of older profiles.
+
+For example, `test_limits.csv` uses a 4.3 V hardware compliance in `CSWL`, while
+the phase ends when the measured voltage magnitude drops below 3.6 V. Its
+`VSWL` phase uses a 0.5 A hardware compliance and a 0.4 A current cutoff.
 
 The software-limit state lasts until `abs(voltage) < compliance_lim` in `CSWL`,
 or `abs(current) < compliance_lim` in `VSWL`, or until `compliance_t` seconds

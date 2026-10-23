@@ -15,6 +15,7 @@ CSV_COLUMNS = (
     "meas_up",
     "compliance_lim",
     "compliance_t",
+    "sw_compliance",
 )
 OUTPUT_COLUMNS = ("timestamp", "idphase", "state", "current", "voltage")
 SOCKET_TIMEOUT_SECONDS = 5.0
@@ -61,6 +62,7 @@ class TestStep:
     meas_up: float | None = None
     compliance_lim: float | None = None
     compliance_t: float | None = None
+    sw_compliance: float | None = None
 
 
 @dataclass(frozen=True)

@@ -194,13 +194,27 @@ def shutdown(client: ScpiClient | None) -> None:
         raise InstrumentError("Shutdown was incomplete: " + "; ".join(errors))
 
 
+def _select_source_function(client: ScpiClient, function: str) -> None:
+    """Disable output before changing between voltage and current sourcing."""
+    response = client.query(":SOUR:FUNC?").strip().strip('"').upper()
+    current = response.split(":", maxsplit=1)[0]
+    functions = {"CURR": "CURR", "CURRENT": "CURR", "VOLT": "VOLT", "VOLTAGE": "VOLT"}
+    if current not in functions:
+        raise InstrumentError(f"Unexpected source function: {response!r}")
+    if functions[current] != function:
+        client.send(":OUTP:SMOD HIMP")
+        client.send(":OUTP OFF")
+        client.send(f":SOUR:FUNC {function}")
+        client.send(":OUTP:SMOD HIMP")
+
+
 def configure_step(
     client: ScpiClient, config: AppConfig, step: TestStep
 ) -> float | None:
-    """Configure one executable test phase while keeping the output enabled."""
+    """Configure a phase; interrupt output when the source function changes."""
 
     if step.mode == "MEAS":
-        client.send(":SOUR:FUNC CURR")
+        _select_source_function(client, "CURR")
         client.send(":SOUR:CURR:RANG:AUTO ON")
         client.send(f":SOUR:CURR:VLIM {config.voltage_compliance:.12g}")
         client.send(":SOUR:CURR:READ:BACK ON")
@@ -215,7 +229,7 @@ def configure_step(
 
     if step.mode == "CURR":
         applied_compliance = min(requested_compliance, config.voltage_compliance)
-        client.send(":SOUR:FUNC CURR")
+        _select_source_function(client, "CURR")
         client.send(":SOUR:CURR:RANG:AUTO ON")
         client.send(f":SOUR:CURR:VLIM {applied_compliance:.12g}")
         client.send(":SOUR:CURR:READ:BACK ON")
@@ -224,7 +238,7 @@ def configure_step(
         client.send(f":SOUR:CURR {source:.12g}")
     elif step.mode == "VOLT":
         applied_compliance = min(requested_compliance, config.current_compliance)
-        client.send(":SOUR:FUNC VOLT")
+        _select_source_function(client, "VOLT")
         client.send(":SOUR:VOLT:RANG:AUTO ON")
         client.send(f":SOUR:VOLT:ILIM {applied_compliance:.12g}")
         client.send(":SOUR:VOLT:READ:BACK ON")
