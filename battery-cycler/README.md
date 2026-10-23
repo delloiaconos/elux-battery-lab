@@ -225,6 +225,17 @@ Command-line input and output directories take precedence over `config.ini`.
 If `--output` is omitted, the output name is
 `YYYYMMDDTHHMM_output.csv` in local system time.
 
+Reset the instrument without loading a profile or starting a test:
+
+```bash
+python main.py --config config.ini --reset
+```
+
+This identifies the instrument, sends `:ABORt` followed by `*RST`, waits for
+`*OPC?`, then leaves the output off in high-impedance mode and closes the
+connection. The configured INI file is required; an input CSV is not.
+`--reset`, `--check-input`, and `--check-dev` are mutually exclusive.
+
 ## Output
 
 The output CSV contains:

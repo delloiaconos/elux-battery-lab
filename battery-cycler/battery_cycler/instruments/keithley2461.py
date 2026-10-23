@@ -110,7 +110,7 @@ def _parse_scpi_bool(response: str, command: str) -> bool:
     raise InstrumentError(f"Invalid Boolean response to {command!r}: {response!r}")
 
 
-def setup(config: AppConfig) -> ScpiClient:
+def setup(config: AppConfig, *, reset_only: bool = False) -> ScpiClient:
     """Connect, identify, reset, and configure safe four-wire operation."""
     client = ScpiClient(config.dev_address, config.dev_port)
     print(
@@ -130,12 +130,17 @@ def setup(config: AppConfig) -> ScpiClient:
             )
         print(f"Instrument: {identification}", file=sys.stderr)
 
+        if reset_only:
+            client.send(":ABORt")
         client.send("*RST")
         if client.query("*OPC?") != "1":
             raise InstrumentError("Instrument did not acknowledge reset completion")
         client.send(":TRIG:CONT OFF")
         client.send(":OUTP:SMOD HIMP")
         client.send(":OUTP OFF")
+
+        if reset_only:
+            return client
 
         for buffer_name in ("defbuffer1", "defbuffer2"):
             client.send(f':TRAC:CLE "{buffer_name}"')

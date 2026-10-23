@@ -58,12 +58,13 @@ def _restore_termination_handlers(
         signal.signal(managed_signal, previous_handler)
 
 
-def _check_device(config: AppConfig) -> None:
+def _check_device(config: AppConfig, *, reset_only: bool = False) -> None:
     client: ScpiClient | None = None
     active_error: BaseException | None = None
     try:
-        client = setup(config)
-        print("Device check passed.", file=sys.stderr)
+        client = setup(config, reset_only=True) if reset_only else setup(config)
+        print("Instrument reset completed." if reset_only else "Device check passed.",
+              file=sys.stderr)
     except BaseException as exc:
         active_error = exc
         raise
@@ -99,6 +100,11 @@ def _build_argument_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="run setup and shutdown only",
     )
+    checks.add_argument(
+        "--reset",
+        action="store_true",
+        help="abort active operations, reset the instrument, and exit with output off",
+    )
     return parser
 
 
@@ -111,6 +117,10 @@ def main(argv: Iterable[str] | None = None) -> int:
             in_dir = Path(args.in_dir).expanduser() if args.in_dir else config.in_dir
             out_dir = Path(args.out_dir).expanduser() if args.out_dir else config.out_dir
             input_path = in_dir / args.input
+
+            if args.reset:
+                _check_device(config, reset_only=True)
+                return 0
 
             if args.check_dev:
                 _check_device(config)
