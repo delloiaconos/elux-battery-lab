@@ -6,8 +6,8 @@ connect to the instrument.
 
 | Script | Displays | Time axis |
 | --- | --- | --- |
-| [plot.py](plot.py) | Programmed profile and measured current/voltage | Hours |
-| [plot.m](plot.m) | Measured current and voltage in synchronized subplots; loads the profile into a table | Seconds |
+| [battery-plot.py](battery-plot.py) | Programmed profile and measured current/voltage | Hours |
+| [battery-plot.m](battery-plot.m) | Programmed profile and measured current/voltage in separate figures | Hours |
 
 ## Python
 
@@ -24,7 +24,7 @@ The examples below also run from the repository root. Replace
 ### Save with the default name
 
 ```bash
-python plots/plot.py \
+python plots/battery-plot.py \
   --steps battery-cycler/examples/steps.example.csv \
   --measures output/measurement.csv
 ```
@@ -36,7 +36,7 @@ interactive windows also open (one per supplied dataset). Add `-q` or `--quiet`
 to save `output.png` without opening windows:
 
 ```bash
-python plots/plot.py --steps battery-cycler/examples/steps.example.csv --quiet
+python plots/battery-plot.py --steps battery-cycler/examples/steps.example.csv --quiet
 ```
 
 Quiet mode controls windows only; the saved-file message and errors remain visible.
@@ -44,8 +44,8 @@ Quiet mode controls windows only; the saved-file message and errors remain visib
 Supply only one input to save just that plot:
 
 ```bash
-python plots/plot.py --steps battery-cycler/examples/steps.example.csv
-python plots/plot.py --measures output/measurement.csv
+python plots/battery-plot.py --steps battery-cycler/examples/steps.example.csv
+python plots/battery-plot.py --measures output/measurement.csv
 ```
 
 At least one input is required. Each supplied file is validated; errors in one
@@ -56,7 +56,7 @@ file are not ignored when both are supplied.
 Save the supplied plot, or both plots together, without opening interactive windows:
 
 ```bash
-python plots/plot.py \
+python plots/battery-plot.py \
   --steps battery-cycler/examples/steps.example.csv \
   --measures output/measurement.csv \
   --output figures/cycle.png
@@ -65,7 +65,7 @@ python plots/plot.py \
 For a machine without a graphical display, select the noninteractive backend:
 
 ```bash
-MPLBACKEND=Agg python plots/plot.py \
+MPLBACKEND=Agg python plots/battery-plot.py \
   --steps battery-cycler/examples/steps.example.csv \
   --measures output/measurement.csv \
   --output figures/cycle.png
@@ -105,7 +105,7 @@ IDs, hardware trips, software-limit states, or compliance thresholds.
 
 ## MATLAB
 
-Open [plot.m](plot.m) and edit its first two assignments. For example, with
+Open [battery-plot.m](battery-plot.m) and edit its first two assignments. For example, with
 MATLAB's Current Folder set to `plots/`:
 
 ```matlab
@@ -113,21 +113,37 @@ fnInput = "../battery-cycler/examples/steps.example.csv";
 fnMeasures = "../output/measurement.csv";
 ```
 
-Run the script from the editor. Paths resolve from MATLAB's current working
+Run the script from the editor or by filename:
+
+```matlab
+run('battery-plot.m')
+```
+
+Use `run` rather than typing `battery-plot` as a command, because the filename
+contains a hyphen. Paths resolve from MATLAB's current working
 folder; use absolute paths if running from another location. The assignments
 in the script overwrite any earlier workspace values for these variables.
 
-The script creates:
+Set `fnInput = ""` for measurements only, or `fnMeasures = ""` for steps only.
+At least one filename must be supplied. Both files are validated before figures
+are created when both are supplied.
 
-- `tblTest`: the input profile table.
-- `tblMeasures`: the measurement table.
-- One figure with current and voltage in separate subplots sharing the X axis.
+The script creates `tblTest` and `tblMeasures` in the workspace, retaining all
+input columns, including `sw_compliance`. The table for an omitted file is empty.
+Each supplied dataset gets its own figure, matching Python's interactive layout:
+current on the left Y axis, voltage on the right, and elapsed time in hours.
+Measurement time starts at the first sample.
 
-Time is in seconds relative to the first measurement. The current script loads
-but does not plot or simulate the profile, so it does not reject indefinite
-profile durations. It has no command-line output option or automatic export;
-use MATLAB's figure export controls to save the figure. A MATLAB version
-supporting `tiledlayout` and `readtable` with `VariableNamingRule` is required.
+The profile supports the current nine-column format and legacy profiles.
+`MEAS` phases leave gaps, the first `STOP` ends the profile, and `duration=-1`
+phases are skipped without adding time. No compliance thresholds or runtime
+`CSWL`/`VSWL` transitions are drawn. At least one finite phase is required for
+a profile plot; blank source fields are allowed for `MEAS` and `STOP`.
+
+Use MATLAB's figure export controls to save figures; the script does not
+implement Python's output/quiet CLI options. A MATLAB version supporting
+local functions in scripts, `yyaxis`, and `readtable` with `VariableNamingRule`
+is required.
 
 ## CSV requirements
 
@@ -137,14 +153,13 @@ The full profile specification is in the
 
 | Input | Python required columns | MATLAB required columns |
 | --- | --- | --- |
-| Profile | `duration,mode,source` | `duration,mode,source,compliance,meas_lb,meas_up,compliance_lim,compliance_t` |
-| Measurements | `timestamp,current,voltage` | `timestamp,idphase,state,current,voltage` |
+| Profile | `duration,mode,source` | `duration,mode,source` |
+| Measurements | `timestamp,current,voltage` | `timestamp,current,voltage` |
 
 Measurement timestamps are Unix seconds; current is in amperes and voltage in
 volts. Both scripts require at least one measurement and finite numeric
-measurement values. Python accepts UTF-8 with or without a BOM, skips empty
-rows, and rejects decreasing timestamps. MATLAB warns about decreasing
-timestamps but still plots the samples. Equal adjacent timestamps are allowed.
+measurement values. Python accepts UTF-8 with or without a BOM and skips empty rows. Both scripts
+reject decreasing timestamps. Equal adjacent timestamps are allowed.
 
 Neither script replaces the runner's profile validation. Before a hardware
 run, use the runner's `--check-input` option.

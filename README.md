@@ -11,8 +11,8 @@ over SCPI/TCP and records measurements to CSV and a JSON stream.
 | --- | --- |
 | [battery-cycler/](battery-cycler/README.md) | Test runner, configuration and profile examples, and automated tests |
 | [battery-cycler.sh](battery-cycler.sh) | Bash launcher for a detachable GNU Screen session |
-| [plots/plot.py](plots/plot.py) | Python visualization of profiles and measurements |
-| [plots/plot.m](plots/plot.m) | MATLAB visualization of profiles and measurements |
+| [plots/battery-plot.py](plots/battery-plot.py) | Python visualization of profiles and measurements |
+| [plots/battery-plot.m](plots/battery-plot.m) | MATLAB visualization of profiles and measurements |
 | `output/` | Local measurement results, when selected as the output directory |
 
 Lab-specific INI configurations and CSV profiles may also be kept locally in
@@ -55,9 +55,8 @@ goes to stdout.
 ## Visualizing results
 
 The [plotting guide](plots/README.md) documents Python image generation and
-export, MATLAB usage, CSV requirements, and troubleshooting. Python
-shows both the programmed profile and measurements; MATLAB displays measured
-current and voltage and loads the profile into a workspace table.
+export, MATLAB usage, CSV requirements, and troubleshooting. Both scripts show the programmed profile and measurements separately, with
+current and voltage on separate Y axes and time in hours.
 
 ## Operating considerations
 
