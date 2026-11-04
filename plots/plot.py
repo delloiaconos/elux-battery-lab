@@ -232,20 +232,30 @@ def plot_measurements(measurements: list[Measurement]) -> None:
 
 
 def save_output(
-    segments: list[ProfileSegment],
-    measurements: list[Measurement],
+    segments: list[ProfileSegment] | None,
+    measurements: list[Measurement] | None,
     output_path: Path,
 ) -> Path:
-    """Save both plots in one image and return its absolute path."""
+    """Save the supplied plots in one image and return its absolute path."""
     output_path = output_path.expanduser()
     if not output_path.is_absolute():
         output_path = Path.cwd() / output_path
     if not output_path.suffix:
         output_path = output_path.with_suffix(".png")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig, axes = plt.subplots(2, 1, figsize=(12, 9), layout="constrained")
-    _draw_profile(axes[0], segments)
-    _draw_measurements(axes[1], measurements)
+    count = int(segments is not None) + int(measurements is not None)
+    if count == 0:
+        raise ValueError("At least one profile or measurement dataset is required")
+    fig, axes = plt.subplots(
+        count, 1, figsize=(12, 9 if count == 2 else 4.5),
+        layout="constrained", squeeze=False,
+    )
+    row = 0
+    if segments is not None:
+        _draw_profile(axes[row, 0], segments)
+        row += 1
+    if measurements is not None:
+        _draw_measurements(axes[row, 0], measurements)
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
     return output_path
@@ -253,17 +263,15 @@ def save_output(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Plot a battery-test profile and its acquired measurements."
+        description="Plot a battery-test profile, acquired measurements, or both."
     )
     parser.add_argument(
         "--file-step",
-        required=True,
         type=Path,
         help="test-profile CSV file",
     )
     parser.add_argument(
         "--file-measures",
-        required=True,
         type=Path,
         help="measurement-output CSV file",
     )
@@ -274,25 +282,31 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         metavar="IMAGE",
         help=(
-            "save both plots in one image; if IMAGE is omitted, use the "
-            "measurement filename with a .png extension in the current directory"
+            "save the supplied plots in one image; if IMAGE is omitted, use the "
+            "measurement filename (or profile filename for steps only) with a .png extension"
         ),
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.file_step is None and args.file_measures is None:
+        parser.error("at least one of --file-step or --file-measures is required")
+    return args
 
 
 def main() -> int:
     args = parse_args()
     try:
-        segments = load_profile(args.file_step)
-        measurements = load_measurements(args.file_measures)
+        segments = load_profile(args.file_step) if args.file_step is not None else None
+        measurements = (
+            load_measurements(args.file_measures)
+            if args.file_measures is not None else None
+        )
     except PlotInputError as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
 
     if args.output is not None:
         if args.output == Path(".") or args.output.is_dir():
             output_path = (
-                args.output / args.file_measures.with_suffix(".png").name
+                args.output / (args.file_measures or args.file_step).with_suffix(".png").name
             )
         else:
             output_path = args.output
@@ -302,8 +316,10 @@ def main() -> int:
             raise SystemExit(f"ERROR: unable to save plot: {exc}") from exc
         print(f"Saved plot: {output_path}")
     else:
-        plot_profile(segments)
-        plot_measurements(measurements)
+        if segments is not None:
+            plot_profile(segments)
+        if measurements is not None:
+            plot_measurements(measurements)
         plt.show()
     return 0
 

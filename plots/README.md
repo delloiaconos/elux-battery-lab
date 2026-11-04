@@ -29,13 +29,23 @@ python plots/plot.py \
   --file-measures output/measurement.csv
 ```
 
-Two windows open: the programmed profile and the measurements. Each uses
+When both files are supplied, two windows open: the programmed profile and the measurements. Each uses
 separate Y axes for current in amperes and voltage in volts. An interactive
 Matplotlib backend and graphical display are required.
 
+Supply only one input to show just that plot:
+
+```bash
+python plots/plot.py --file-step battery-cycler/examples/steps.example.csv
+python plots/plot.py --file-measures output/measurement.csv
+```
+
+At least one input is required. Each supplied file is validated; errors in one
+file are not ignored when both are supplied.
+
 ### Save an image
 
-Save both plots together in a single image without opening interactive windows:
+Save the supplied plot, or both plots together, without opening interactive windows:
 
 ```bash
 python plots/plot.py \
@@ -55,10 +65,10 @@ MPLBACKEND=Agg python plots/plot.py \
 
 | Option | Behavior |
 | --- | --- |
-| `--file-step PATH` | Required profile CSV |
-| `--file-measures PATH` | Required measurement CSV |
-| `--output` | Save using the measurement basename with `.png` in the working directory |
-| `--output PATH` | Save to the given file, or into an existing directory using the measurement basename |
+| `--file-step PATH` | Optional profile CSV; required if measurements are omitted |
+| `--file-measures PATH` | Optional measurement CSV; required if profile is omitted |
+| `--output` | Save using the measurement basename (profile basename for steps only) with `.png` in the working directory |
+| `--output PATH` | Save to the given file, or into an existing directory using the measurement basename (profile basename for steps only) |
 | `-h`, `--help` | Show command-line help |
 
 Relative paths resolve from the working directory. Missing parent directories
@@ -66,7 +76,7 @@ are created for output files. A filename without an extension gets `.png`;
 other extensions select formats supported by Matplotlib, such as PDF or SVG.
 An existing output file is overwritten. An output path intended as a directory
 must already exist; otherwise it is treated as a filename. Saved figures use a
-12 × 9 inch layout and 150 dpi, and the absolute output path is printed.
+12 × 9 inch layout for both plots or 12 × 4.5 inches for one plot, at 150 dpi, and the absolute output path is printed.
 
 ### Profile and measurement behavior
 
