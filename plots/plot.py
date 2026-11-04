@@ -277,10 +277,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output",
-        default=Path("output.png"),
         type=Path,
         metavar="IMAGE",
         help="output image file path (default: output.png in the working directory)",
+    )
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="do not open plot windows when --output is omitted",
     )
     args = parser.parse_args()
     if args.steps is None and args.measures is None:
@@ -299,13 +303,20 @@ def main() -> int:
     except PlotInputError as exc:
         raise SystemExit(f"ERROR: {exc}") from exc
 
+    output_path = args.output if args.output is not None else Path("output.png")
     try:
-        if args.output.expanduser().is_dir():
+        if output_path.expanduser().is_dir():
             raise ValueError("--output must be a file path, not a directory")
-        output_path = save_output(segments, measurements, args.output)
+        output_path = save_output(segments, measurements, output_path)
     except (OSError, ValueError) as exc:
         raise SystemExit(f"ERROR: unable to save plot: {exc}") from exc
     print(f"Saved plot: {output_path}")
+    if args.output is None and not args.quiet:
+        if segments is not None:
+            plot_profile(segments)
+        if measurements is not None:
+            plot_measurements(measurements)
+        plt.show()
     return 0
 
 

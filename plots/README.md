@@ -31,8 +31,15 @@ python plots/plot.py \
 
 The command saves `output.png` in the working directory. With both inputs,
 the image contains the programmed profile and the measurements, each with
-separate Y axes for current in amperes and voltage in volts. No interactive
-windows are opened.
+separate Y axes for current in amperes and voltage in volts. Without `--output`,
+interactive windows also open (one per supplied dataset). Add `-q` or `--quiet`
+to save `output.png` without opening windows:
+
+```bash
+python plots/plot.py --steps battery-cycler/examples/steps.example.csv --quiet
+```
+
+Quiet mode controls windows only; the saved-file message and errors remain visible.
 
 Supply only one input to save just that plot:
 
@@ -69,6 +76,7 @@ MPLBACKEND=Agg python plots/plot.py \
 | `--steps PATH` | Optional profile CSV; required if measurements are omitted |
 | `--measures PATH` | Optional measurement CSV; required if profile is omitted |
 | `--output PATH` | Output image file path; defaults to `output.png` in the working directory |
+| `-q`, `--quiet` | Disable windows when `--output` is omitted; still save `output.png` |
 | `-h`, `--help` | Show command-line help |
 
 Relative paths resolve from the working directory. Missing parent directories
