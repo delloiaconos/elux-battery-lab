@@ -21,23 +21,24 @@ python -m pip install -r plots/requirements.txt
 The examples below also run from the repository root. Replace
 `output/measurement.csv` with an existing measurement file.
 
-### Interactive display
+### Save with the default name
 
 ```bash
 python plots/plot.py \
-  --file-step battery-cycler/examples/steps.example.csv \
-  --file-measures output/measurement.csv
+  --steps battery-cycler/examples/steps.example.csv \
+  --measures output/measurement.csv
 ```
 
-When both files are supplied, two windows open: the programmed profile and the measurements. Each uses
-separate Y axes for current in amperes and voltage in volts. An interactive
-Matplotlib backend and graphical display are required.
+The command saves `output.png` in the working directory. With both inputs,
+the image contains the programmed profile and the measurements, each with
+separate Y axes for current in amperes and voltage in volts. No interactive
+windows are opened.
 
-Supply only one input to show just that plot:
+Supply only one input to save just that plot:
 
 ```bash
-python plots/plot.py --file-step battery-cycler/examples/steps.example.csv
-python plots/plot.py --file-measures output/measurement.csv
+python plots/plot.py --steps battery-cycler/examples/steps.example.csv
+python plots/plot.py --measures output/measurement.csv
 ```
 
 At least one input is required. Each supplied file is validated; errors in one
@@ -49,8 +50,8 @@ Save the supplied plot, or both plots together, without opening interactive wind
 
 ```bash
 python plots/plot.py \
-  --file-step battery-cycler/examples/steps.example.csv \
-  --file-measures output/measurement.csv \
+  --steps battery-cycler/examples/steps.example.csv \
+  --measures output/measurement.csv \
   --output figures/cycle.png
 ```
 
@@ -58,24 +59,24 @@ For a machine without a graphical display, select the noninteractive backend:
 
 ```bash
 MPLBACKEND=Agg python plots/plot.py \
-  --file-step battery-cycler/examples/steps.example.csv \
-  --file-measures output/measurement.csv \
+  --steps battery-cycler/examples/steps.example.csv \
+  --measures output/measurement.csv \
   --output figures/cycle.png
 ```
 
 | Option | Behavior |
 | --- | --- |
-| `--file-step PATH` | Optional profile CSV; required if measurements are omitted |
-| `--file-measures PATH` | Optional measurement CSV; required if profile is omitted |
-| `--output` | Save using the measurement basename (profile basename for steps only) with `.png` in the working directory |
-| `--output PATH` | Save to the given file, or into an existing directory using the measurement basename (profile basename for steps only) |
+| `--steps PATH` | Optional profile CSV; required if measurements are omitted |
+| `--measures PATH` | Optional measurement CSV; required if profile is omitted |
+| `--output PATH` | Output image file path; defaults to `output.png` in the working directory |
 | `-h`, `--help` | Show command-line help |
 
 Relative paths resolve from the working directory. Missing parent directories
 are created for output files. A filename without an extension gets `.png`;
 other extensions select formats supported by Matplotlib, such as PDF or SVG.
-An existing output file is overwritten. An output path intended as a directory
-must already exist; otherwise it is treated as a filename. Saved figures use a
+An existing output file is overwritten. `--output` requires a filename, optionally with a directory path; a directory
+alone is rejected. Supplying `--output` without a value is an argument error.
+Saved figures use a
 12 × 9 inch layout for both plots or 12 × 4.5 inches for one plot, at 150 dpi, and the absolute output path is printed.
 
 ### Profile and measurement behavior

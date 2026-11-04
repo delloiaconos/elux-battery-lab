@@ -54,8 +54,8 @@ goes to stdout.
 
 ## Visualizing results
 
-The [plotting guide](plots/README.md) documents Python interactive plots and
-image export, MATLAB usage, CSV requirements, and troubleshooting. Python
+The [plotting guide](plots/README.md) documents Python image generation and
+export, MATLAB usage, CSV requirements, and troubleshooting. Python
 shows both the programmed profile and measurements; MATLAB displays measured
 current and voltage and loads the profile into a workspace table.
 
