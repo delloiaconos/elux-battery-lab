@@ -395,4 +395,4 @@ Tests use simulated instruments and clocks to cover profile parsing,
 software-limit transitions, compliance settings, source switching, and reset
 behavior. They do not connect to hardware or replace instrument validation.
 
-For result visualization, see the [project plotting instructions](../README.md#visualizing-results).
+For result visualization, see the [plotting guide](../plots/README.md).

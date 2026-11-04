@@ -54,28 +54,10 @@ goes to stdout.
 
 ## Visualizing results
 
-Run these commands from the repository root. Replace the measurement path with
-an existing result file:
-
-```bash
-python -m pip install -r plots/requirements.txt
-python plots/plot.py \
-  --file-step battery-cycler/examples/steps.example.csv \
-  --file-measures output/measurement.csv
-```
-
-Add `--output figures/cycle.png` to save the figures without opening interactive
-windows. With `--output` alone, the image is saved in the working directory
-using the measurement filename with a `.png` extension.
-
-The Python plots show the programmed profile and measured current/voltage with
-time in hours. Indefinite (`duration=-1`) profile phases are omitted from the
-programmed timeline, and the first `STOP` ends it. Software-limit transitions
-and early phase termination can make actual timing differ from that timeline.
-
-For MATLAB, edit `fnInput` and `fnMeasures` in [plots/plot.m](plots/plot.m) to
-point to the profile and measurement CSV. Its plots use elapsed seconds;
-indefinite phases before `STOP` are rejected by its profile plot.
+The [plotting guide](plots/README.md) documents Python interactive plots and
+image export, MATLAB usage, CSV requirements, and troubleshooting. Python
+shows both the programmed profile and measurements; MATLAB displays measured
+current and voltage and loads the profile into a workspace table.
 
 ## Operating considerations
 
